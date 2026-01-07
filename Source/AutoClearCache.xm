@@ -60,7 +60,10 @@ static void setupNotifications() {
                                                       object:nil
                                                        queue:nil
                                                   usingBlock:^(NSNotification *note) {
-        clearCache();
+        // Clear cache immediately when entering background (most reliable)
+        if (YTMU(@"YTMUltimateIsEnabled")) {
+            clearCacheSync();
+        }
     }];
     
     [[NSNotificationCenter defaultCenter] addObserverForName:UIApplicationWillTerminateNotification
@@ -79,11 +82,15 @@ static void setupNotifications() {
 
 - (void)applicationDidEnterBackground:(UIApplication *)application {
     %orig;
-    clearCache();
+    // Clear cache immediately when entering background (most reliable)
+    if (YTMU(@"YTMUltimateIsEnabled")) {
+        clearCacheSync();
+    }
 }
 
 - (void)applicationWillTerminate:(UIApplication *)application {
     %orig;
+    // On termination, do it synchronously to ensure it completes
     if (YTMU(@"YTMUltimateIsEnabled")) {
         clearCacheSync();
     }
