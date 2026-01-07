@@ -10,14 +10,22 @@ static void clearCacheSync() {
     NSString *cachePath = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES).firstObject;
     if (cachePath) {
         NSFileManager *fileManager = [NSFileManager defaultManager];
-        // Try to remove the entire cache directory first (like the settings do)
-        [fileManager removeItemAtPath:cachePath error:nil];
+        BOOL isDirectory = NO;
+        BOOL exists = [fileManager fileExistsAtPath:cachePath isDirectory:&isDirectory];
         
-        // If that didn't work, delete contents individually
-        NSArray *contents = [fileManager contentsOfDirectoryAtPath:cachePath error:nil];
-        for (NSString *item in contents) {
-            NSString *itemPath = [cachePath stringByAppendingPathComponent:item];
-            [fileManager removeItemAtPath:itemPath error:nil];
+        if (exists && isDirectory) {
+            // Try to remove the entire cache directory first (like the settings do)
+            NSError *error = nil;
+            [fileManager removeItemAtPath:cachePath error:&error];
+            
+            // If that didn't work, delete contents individually
+            if (error && [fileManager fileExistsAtPath:cachePath]) {
+                NSArray *contents = [fileManager contentsOfDirectoryAtPath:cachePath error:nil];
+                for (NSString *item in contents) {
+                    NSString *itemPath = [cachePath stringByAppendingPathComponent:item];
+                    [fileManager removeItemAtPath:itemPath error:nil];
+                }
+            }
         }
     }
 }
@@ -79,16 +87,6 @@ static void setupNotifications() {
     if (YTMU(@"YTMUltimateIsEnabled")) {
         clearCacheSync();
     }
-}
-
-%end
-
-// Also hook UIApplication suspend as additional fallback
-%hook UIApplication
-
-- (void)suspend {
-    clearCache();
-    %orig;
 }
 
 %end
