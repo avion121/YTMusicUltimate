@@ -30,30 +30,6 @@ static void clearCacheSync() {
     }
 }
 
-static void clearCache() {
-    if (!YTMU(@"YTMUltimateIsEnabled")) {
-        return;
-    }
-    
-    // Use background task to ensure cache clearing completes even when app is exiting
-    UIApplication *app = [UIApplication sharedApplication];
-    __block UIBackgroundTaskIdentifier bgTask = [app beginBackgroundTaskWithExpirationHandler:^{
-        // If we're running out of time, do it synchronously
-        clearCacheSync();
-        [app endBackgroundTask:bgTask];
-        bgTask = UIBackgroundTaskInvalid;
-    }];
-    
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-        clearCacheSync();
-        
-        if (bgTask != UIBackgroundTaskInvalid) {
-            [app endBackgroundTask:bgTask];
-            bgTask = UIBackgroundTaskInvalid;
-        }
-    });
-}
-
 // Hook using UIApplication notifications (more reliable)
 static void setupNotifications() {
     [[NSNotificationCenter defaultCenter] addObserverForName:UIApplicationDidEnterBackgroundNotification
